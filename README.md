@@ -9,9 +9,8 @@ Hugo bindings for [statique-pouet](https://gitlab.com/iglou.eu/statiquepouet). T
 From your Hugo site root:
 
 ```bash
-git clone --depth 1 \
-  https://gitlab.com/iglou.eu/statiquepouet-hugo.git \
-  layouts/_partials/statique-pouet
+cd ./themes/<name>
+git clone --depth 1 https://gitlab.com/iglou.eu/statiquepouet-hugo.git layouts/_partials/statiquepouet-hugo
 ```
 
 Wire the four partials. In `layouts/_default/baseof.html`:
