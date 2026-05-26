@@ -1,0 +1,18 @@
+{{- if .Params.fediverse_context -}}
+{{- $cfg := site.Params.statiquepouet | default dict -}}
+{{- $basePath := cond (isset $cfg "basePath") $cfg.basePath "https://statiquepouet.gitlab.iglou.eu/" -}}
+{{- if not (strings.HasSuffix $basePath "/") -}}{{- $basePath = printf "%s/" $basePath -}}{{- end -}}
+{{- $lang := $cfg.lang -}}
+{{- $containerId := cond (isset $cfg "commentsContainerId") $cfg.commentsContainerId "comments-content" -}}
+<script>
+    window.STATIQUE_POUET_CONFIG = {
+        commentsContainerId: {{ $containerId | jsonify | safeJS }},
+        lang: {{ $lang | jsonify | safeJS }},
+        basePath: {{ $basePath | jsonify | safeJS }}
+    };
+    window.statiquePouet = function (action) {
+        return (window._sp ||= import(STATIQUE_POUET_CONFIG.basePath + "dist/comments.min.js"))
+            .then(function (m) { return m[action](); });
+    };
+</script>
+{{- end -}}

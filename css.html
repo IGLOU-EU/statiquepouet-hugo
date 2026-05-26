@@ -1,0 +1,14 @@
+{{- if .Params.fediverse_context -}}
+{{- $cfg := site.Params.statiquepouet | default dict -}}
+{{- $basePath := cond (isset $cfg "basePath") $cfg.basePath "/" -}}
+{{- if not (strings.HasSuffix $basePath "/") -}}{{- $basePath = printf "%s/" $basePath -}}{{- end -}}
+{{- $cssLight := cond (isset $cfg "cssLight") $cfg.cssLight true -}}
+{{- $cssDark := cond (isset $cfg "cssDark") $cfg.cssDark true -}}
+{{- $autoTheme := cond (isset $cfg "cssAutoTheme") $cfg.cssAutoTheme true -}}
+{{ if $cssLight -}}
+<link rel="stylesheet" href="{{ printf "%sdist/statique-pouet-light.min.css" $basePath }}"{{ if $autoTheme }} media="(prefers-color-scheme: light)"{{ end }} crossorigin="anonymous">
+{{- end }}
+{{ if $cssDark -}}
+<link rel="stylesheet" href="{{ printf "%sdist/statique-pouet-dark.min.css" $basePath }}"{{ if $autoTheme }} media="(prefers-color-scheme: dark)"{{ end }} crossorigin="anonymous">
+{{- end }}
+{{- end -}}

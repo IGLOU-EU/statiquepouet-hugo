@@ -1,0 +1,20 @@
+{{- if .Params.fediverse_context -}}
+{{- $cfg := site.Params.statiquepouet | default dict -}}
+{{- $containerId := cond (isset $cfg "commentsContainerId") $cfg.commentsContainerId "comments-content" -}}
+{{- $btnLoad := cond (isset $cfg "buttonLoad") $cfg.buttonLoad true -}}
+{{- $btnReply := cond (isset $cfg "buttonReply") $cfg.buttonReply true -}}
+{{- $btnShare := cond (isset $cfg "buttonShare") $cfg.buttonShare true -}}
+{{ if $btnLoad -}}
+<button type="button" class="statique-pouet-button statique-pouet-button-load"
+  onclick="statiquePouet('loadComments')">Load comments</button>
+{{- end }}
+{{ if $btnReply -}}
+<button type="button" class="statique-pouet-button statique-pouet-button-reply"
+  onclick="statiquePouet('postComment')">Reply</button>
+{{- end }}
+{{ if $btnShare -}}
+<button type="button" class="statique-pouet-button statique-pouet-button-share"
+  onclick="statiquePouet('shareArticle')">Share</button>
+{{- end }}
+<div id="{{ $containerId }}"></div>
+{{- end -}}
