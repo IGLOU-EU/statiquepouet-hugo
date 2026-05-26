@@ -1,0 +1,11 @@
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Hugo (in case this repo is ever cloned/used at site root)
+/public/
+/resources/
+.hugo_build.lock
