@@ -1,6 +1,6 @@
 {{- if .Params.fediverse_context -}}
 {{- $cfg := site.Params.statiquepouet | default dict -}}
-{{- $basePath := cond (isset $cfg "basePath") $cfg.basePath "/" -}}
+{{- $basePath := cond (isset $cfg "basePath") $cfg.basePath "https://statiquepouet.gitlab.iglou.eu/" -}}
 {{- if not (strings.HasSuffix $basePath "/") -}}{{- $basePath = printf "%s/" $basePath -}}{{- end -}}
 {{- $cssLight := cond (isset $cfg "cssLight") $cfg.cssLight true -}}
 {{- $cssDark := cond (isset $cfg "cssDark") $cfg.cssDark true -}}
