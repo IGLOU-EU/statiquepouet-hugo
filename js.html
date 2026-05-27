@@ -1,13 +1,11 @@
 {{- if .Params.fediverse_context -}}
 {{- $cfg := site.Params.statiquepouet | default dict -}}
-{{- $basePath := cond (isset $cfg "basePath") $cfg.basePath "https://statiquepouet.gitlab.iglou.eu/" -}}
+{{- $basePath := $cfg.basePath | default "https://statiquepouet.gitlab.iglou.eu/" -}}
 {{- if not (strings.HasSuffix $basePath "/") -}}{{- $basePath = printf "%s/" $basePath -}}{{- end -}}
-{{- $lang := $cfg.lang -}}
-{{- $containerId := cond (isset $cfg "commentsContainerId") $cfg.commentsContainerId "comments-content" -}}
 <script>
     window.STATIQUE_POUET_CONFIG = {
-        commentsContainerId: {{ $containerId | jsonify | safeJS }},
-        lang: {{ $lang | jsonify | safeJS }},
+        commentsContainerId: {{ $cfg.commentsContainerId | default "comments-content" | jsonify | safeJS }},
+        lang: {{ $cfg.lang | jsonify | safeJS }},
         basePath: {{ $basePath | jsonify | safeJS }}
     };
     window.statiquePouet = function (action) {
