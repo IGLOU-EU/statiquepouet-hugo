@@ -2,15 +2,15 @@
 {{- $cfg := site.Params.statiquepouet | default dict -}}
 {{ if cond (isset $cfg "buttonload") $cfg.buttonLoad true -}}
 <button type="button" class="statique-pouet-button statique-pouet-button-load"
-  onclick="statiquePouet('loadComments')">Load comments</button>
+  onclick="statiquePouet('loadComments')">{{ $cfg.buttonLoadText | default "Load comments" }}</button>
 {{- end }}
 {{ if cond (isset $cfg "buttonreply") $cfg.buttonReply true -}}
 <button type="button" class="statique-pouet-button statique-pouet-button-reply"
-  onclick="statiquePouet('postComment')">Reply</button>
+  onclick="statiquePouet('postComment')">{{ $cfg.buttonReplyText | default "Reply" }}</button>
 {{- end }}
 {{ if cond (isset $cfg "buttonshare") $cfg.buttonShare true -}}
 <button type="button" class="statique-pouet-button statique-pouet-button-share"
-  onclick="statiquePouet('shareArticle')">Share</button>
+  onclick="statiquePouet('shareArticle')">{{ $cfg.buttonShareText | default "Share" }}</button>
 {{- end }}
 <div id="{{ $cfg.commentsContainerId | default "comments-content" }}"></div>
 {{- end -}}

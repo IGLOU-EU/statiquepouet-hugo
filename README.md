@@ -65,14 +65,19 @@ Under `[params.statiquepouet]` in your Hugo config. Every key has a default, ove
 | `cssLight` / `cssDark` | bool | `true` | Emit the corresponding theme `<link>`. |
 | `cssAutoTheme` | bool | `true` | Wrap themes in `prefers-color-scheme` media queries. `false` = both loaded unconditionally (toggle theme yourself via a class on `<body>` etc.). |
 | `buttonLoad` / `buttonReply` / `buttonShare` | bool | `true` | Emit each button. |
+| `buttonLoadText` | string | `"Load comments"` | Label of the load button. |
+| `buttonReplyText` | string | `"Reply"` | Label of the reply button. |
+| `buttonShareText` | string | `"Share"` | Label of the share button. |
 
 TOML example:
 
 ```toml
 [params.statiquepouet]
   lang = "fr"
-  cssDark = false       # light theme only
-  buttonShare = false   # hide the share button
+  cssDark = false                       # light theme only
+  buttonShare = false                   # hide the share button
+  buttonLoadText = "Charger les commentaires"
+  buttonReplyText = "Répondre"
 ```
 
 ## Self-hosting the assets
