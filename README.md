@@ -1,6 +1,6 @@
-# statique-pouet — Hugo integration
+# StatiquePouet — Hugo integration
 
-Hugo bindings for [statique-pouet](https://gitlab.com/iglou.eu/statiquepouet). The underlying library, its options, theming and runtime behaviour live in the main repo, this one is just the glue.
+Hugo bindings for [StatiquePouet](https://gitlab.com/iglou.eu/statiquepouet). The underlying library, its options, theming and runtime behaviour live in the main repo, this one is just the glue.
 
 > Intentionally not packaged as a Hugo module: four partial files don't justify pulling in a Go toolchain, adding a `go.mod` to your site, or migrating a classic `theme:` setup into the modules system. A `git clone` does the same job with zero friction.
 
