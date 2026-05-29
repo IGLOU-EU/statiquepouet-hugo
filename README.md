@@ -163,11 +163,19 @@ include:
   - local: 'themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
 ```
 
-**GitHub.** Workflows only run from `.github/workflows/` at the repo root, so copy the file there. On GitHub `MASTODON_TOKEN` is a secret and the rest are repository variables (`vars.*`).
+**GitHub.** If you have no workflow yet, copy the file as a standalone workflow. Workflows only run from `.github/workflows/` at the repo root, so copy it there.
 
 ```bash
 cp themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.github-actions.yml .github/workflows/announce.yml
 ```
+
+If you already have a build/deploy workflow, do not add a second workflow. Copy only the `announce` job (the `jobs.announce:` block, from `announce:` down to the end of the file) into your existing workflow's `jobs:` and wire it as a gate before your build:
+
+- Add `needs: announce` to your build job. A failed announce then stops the build and deploy.
+- Give the announce job `permissions: contents: write` (set it on the job, since a build workflow's top-level permissions are usually read-only). Keep your build job's `pages: write` / `id-token: write` on that job.
+- Set your build job's checkout to `ref: ${{ github.ref_name }}`. The announce job pushes the front-matter URLs back to the branch, and checking out the branch tip (rather than the triggering SHA) makes the build render the thread in the same run instead of the next one.
+
+To store the Mastodon secret and variables in a named GitHub Environment instead of at repository level, add `environment: { name: <env> }` to the announce job and create that environment under Settings, Environments. Declaring the environment on the job is what unlocks its scoped `vars.*` and `secrets.*`.
 
 ## License
 

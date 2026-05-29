@@ -12,6 +12,11 @@
 # The job locates this module itself by scanning for its go.mod, so it
 # works whether the theme was `git clone`d or added as a submodule.
 #
+# Already running a build/deploy workflow? Do not add this as a second
+# workflow. Copy just the `announce` job into your existing one and make your
+# build job `needs: announce` so a failed announce stops the deploy. See the
+# README (Mastodon auto-announce, CI) for the full merge recipe.
+#
 # Required configuration (Settings, Secrets and variables, Actions):
 #   secrets.MASTODON_TOKEN   OAuth2 token, scope write:statuses.
 #   vars.MASTODON_INSTANCE   Bare hostname, e.g. mastodon.example.
@@ -23,6 +28,11 @@
 # SITE_ROOT is set automatically to the checkout, and the push uses the
 # built-in GITHUB_TOKEN (no extra token needed; such pushes do not
 # retrigger workflows).
+#
+# To keep the secret and variables in a named GitHub Environment instead of at
+# repository level, create the environment (Settings, Environments) and
+# uncomment the `environment:` block on the job below. Declaring it is what
+# unlocks the environment-scoped vars and secrets.
 
 name: StatiquePouet announce
 
@@ -38,6 +48,8 @@ jobs:
   announce:
     runs-on: ubuntu-latest
     container: golang:latest
+    environment:
+      name: announce
     env:
       ANNOUNCE_DIR: ${{ vars.ANNOUNCE_DIR }}
       MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN }}
