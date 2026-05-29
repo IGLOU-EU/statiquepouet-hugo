@@ -93,3 +93,78 @@ The default `basePath` points at the upstream Pages CDN. Convenient but tied to 
 cp -r path/to/statiquepouet/dist static/dist
 cp -r path/to/statiquepouet/lang static/lang
 ```
+
+## Mastodon auto-announce
+
+The repo ships [`announce/`](announce/), a small Go program that toots articles whose `fediverse_context` is empty and writes the resulting URL back into their front matter. It links Hugo as a Go library (`hugolib.NewHugoSites` + a no-render build) to enumerate pages and resolve permalinks, so per-page `slug:` / `url:` overrides and the site's `permalinks` config are honoured. Idempotent (skips already-announced articles, sends `Idempotency-Key` on the POST), skips gracefully when the token is unset (forks without secrets don't break).
+
+Optional per-article front-matter key `fediverse_hashtags` (list of strings, without the leading `#`) appends Mastodon hashtags at the end of the toot:
+
+```yaml
+fediverse_context: ""
+fediverse_hashtags:
+  - blog
+  - lowtech
+```
+
+Site-wide defaults go under `[params.statiquepouet]` as a `fediverse_hashtags` list. They are prepended to every toot, in addition to each article's own tags. Case-insensitive duplicates are dropped, the defaults keeping their leading position:
+
+```toml
+[params.statiquepouet]
+  fediverse_hashtags = ["blog", "france"]
+```
+
+Setup:
+1. Mastodon UI, Preferences, Development, New application, scope `write:statuses` only. Copy the token.
+2. Export `MASTODON_TOKEN`, `MASTODON_INSTANCE`. Optional: `STATUS_VISIBILITY` (default `public`), `STATUS_TEMPLATE` (default `New article: %title%\n%url%`), `SITE_ROOT` (default `.`). See the file header for details.
+3. Wire it before `hugo build`. npm `prebuild`, Makefile, or a git `pre-push` hook.
+
+Requires `go` in `PATH` (Hugo is embedded as a library). From the site root:
+
+```bash
+# .git/hooks/pre-push
+#!/bin/sh
+set -e
+go run ./themes/<name>/layouts/_partials/statiquepouet-hugo/announce
+if ! git diff --quiet content/; then
+  git add content/
+  git commit -m "chore: announce articles to Mastodon"
+fi
+```
+
+You can also build the binary once (`go build -o announce ./announce` from the theme repo) and ship it in `PATH` to skip the `go run` cost on every invocation.
+
+### CI (GitLab / GitHub)
+
+The `announce/` folder ships ready CI files, [`announce.gitlab-ci.yml`](announce/announce.gitlab-ci.yml) and [`announce.github-actions.yml`](announce/announce.github-actions.yml), with the same flow: run the program on `golang:latest`, refresh its dependencies with `go mod tidy`, then commit and push the front-matter URLs back to your repo. No editing of the file is needed everything is set through CI variables. Run it before your Hugo build.
+
+Configure these (GitLab: Settings, CI/CD, Variables. GitHub: Settings, Secrets and variables, Actions). The job fails fast if either is unset:
+
+| Variable | Notes |
+|---|---|
+| `MASTODON_TOKEN` | Token, scope `write:statuses`. A GitHub secret, mark masked on GitLab. |
+| `MASTODON_INSTANCE` | Bare hostname, e.g. `mastodon.example`. |
+
+Optional:
+
+| Variable | Notes |
+|---|---|
+| `STATUS_VISIBILITY` | `public` / `unlisted` / `private` / `direct`. Default `public`. |
+| `STATUS_TEMPLATE` | Toot body, tokens `%title%` and `%url%`. Default `New article: %title%\n%url%`. |
+| `ANNOUNCE_DIR` | Skip the scan and point at the module directly. |
+| `SITE_ROOT` | Hugo site root. Set it only for a monorepo where the site lives in a subfolder (defaults to the repo root). |
+
+The push back uses the platform's built-in token, no extra credential to create, and such pushes do not retrigger the pipeline.
+
+**GitLab.** Include it from your `.gitlab-ci.yml`, then enable the job-token push once under Settings, CI/CD, Job token permissions, "Allow Git push requests to the repository". The job targets branch pipelines (`$CI_COMMIT_BRANCH`).
+
+```yaml
+include:
+  - local: 'themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
+```
+
+**GitHub.** Workflows only run from `.github/workflows/` at the repo root, so copy the file there. On GitHub `MASTODON_TOKEN` is a secret and the rest are repository variables (`vars.*`).
+
+```bash
+cp themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.github-actions.yml .github/workflows/announce.yml
+```

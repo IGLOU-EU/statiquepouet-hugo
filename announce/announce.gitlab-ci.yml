@@ -1,0 +1,65 @@
+# StatiquePouet Mastodon auto-announce, as a reusable GitLab CI job.
+#
+# Toots articles whose `fediverse_context` is empty, writes the resulting
+# URL back into their front matter, then commits and pushes that change
+# so StatiquePouet can render the thread on the next build.
+#
+# Include it from your site's .gitlab-ci.yml (no editing needed):
+#
+#   include:
+#     - local: 'themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
+#
+# Run the statiquepouet-announce job before your `hugo build` job. The
+# job locates this module itself by scanning for its go.mod, so it works
+# whether the theme was `git clone`d or added as a submodule. (For the
+# submodule case, GIT_SUBMODULE_STRATEGY below pulls its files in.)
+#
+# Required CI/CD variables (Settings > CI/CD > Variables). The job fails
+# fast if either is unset:
+#   MASTODON_TOKEN     OAuth2 token, scope write:statuses. Mark it masked.
+#   MASTODON_INSTANCE  Bare hostname, e.g. mastodon.example.
+#
+# Optional:
+#   STATUS_VISIBILITY  public | unlisted | private | direct. Default public.
+#   STATUS_TEMPLATE    Toot body, tokens %title% and %url%. Default
+#                      "New article: %title%\n%url%".
+#   ANNOUNCE_DIR       Skip auto-detection and use this module path directly.
+#   SITE_ROOT          Hugo site root. Defaults to the repo root; set it
+#                      only for a monorepo where the site lives in a subfolder.
+#
+# The push back uses the built-in CI_JOB_TOKEN, so no extra token is
+# needed. Enable it once under Settings > CI/CD > Job token permissions,
+# "Allow Git push requests to the repository". Such pushes do not
+# retrigger the pipeline.
+
+statiquepouet-announce:
+  image: golang:latest
+  variables:
+    # Pull submodule files in, in case the theme was added as a submodule.
+    GIT_SUBMODULE_STRATEGY: recursive
+    # Hugo site root. Defaults to the repo root; override for a monorepo.
+    SITE_ROOT: "$CI_PROJECT_DIR"
+  script:
+    - |
+      for v in MASTODON_TOKEN MASTODON_INSTANCE; do
+        eval "val=\$$v"
+        [ -n "$val" ] || { echo "announce: required variable $v is unset"; exit 1; }
+      done
+    - |
+      ANNOUNCE_DIR="${ANNOUNCE_DIR:-$(dirname "$(grep -rl --include=go.mod 'iglou-eu/statiquepouet-hugo' "$SITE_ROOT" | head -n1)")}"
+      [ -f "$ANNOUNCE_DIR/go.mod" ] || { echo "announce: could not locate the announce module under $SITE_ROOT (set ANNOUNCE_DIR to override)"; exit 1; }
+      echo "announce: using module at $ANNOUNCE_DIR"
+      cd "$ANNOUNCE_DIR"
+      go mod tidy
+      go run .
+    # Commit and push the front-matter changes the program wrote back.
+    - git config user.email "ci@${CI_SERVER_HOST}"
+    - git config user.name "StatiquePouet announce bot"
+    - |
+      if git -C "$SITE_ROOT" diff --quiet -- content; then
+        echo "announce: no front-matter changes to commit"
+      else
+        git -C "$SITE_ROOT" add content
+        git -C "$SITE_ROOT" commit -m "chore: announce articles to Mastodon"
+        git -C "$SITE_ROOT" push "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" "HEAD:${CI_COMMIT_BRANCH}"
+      fi

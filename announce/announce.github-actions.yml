@@ -1,0 +1,82 @@
+# StatiquePouet Mastodon auto-announce, as a GitHub Actions workflow.
+#
+# GitHub only runs workflows from `.github/workflows/` at the repo root,
+# so copy this file there (e.g. .github/workflows/announce.yml) rather
+# than including it in place.
+#
+# It runs the program on golang:latest, refreshes its dependencies with
+# `go mod tidy`, then commits and pushes the front-matter URLs back to
+# your repo so StatiquePouet can render the thread on the next build.
+#
+# Copy it as is (no editing needed) and run it before your Hugo build.
+# The job locates this module itself by scanning for its go.mod, so it
+# works whether the theme was `git clone`d or added as a submodule.
+#
+# Required configuration (Settings, Secrets and variables, Actions):
+#   secrets.MASTODON_TOKEN   OAuth2 token, scope write:statuses.
+#   vars.MASTODON_INSTANCE   Bare hostname, e.g. mastodon.example.
+# The job fails fast if either is unset. Optional:
+#   vars.STATUS_VISIBILITY   public / unlisted / private / direct. Default public.
+#   vars.STATUS_TEMPLATE     Toot body, tokens %title% and %url%. Default
+#                            "New article: %title%\n%url%".
+#   vars.ANNOUNCE_DIR        Skip auto-detection and use this path directly.
+# SITE_ROOT is set automatically to the checkout, and the push uses the
+# built-in GITHUB_TOKEN (no extra token needed; such pushes do not
+# retrigger workflows).
+
+name: StatiquePouet announce
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    container: golang:latest
+    env:
+      ANNOUNCE_DIR: ${{ vars.ANNOUNCE_DIR }}
+      MASTODON_TOKEN: ${{ secrets.MASTODON_TOKEN }}
+      MASTODON_INSTANCE: ${{ vars.MASTODON_INSTANCE }}
+      STATUS_VISIBILITY: ${{ vars.STATUS_VISIBILITY }}
+      STATUS_TEMPLATE: ${{ vars.STATUS_TEMPLATE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Check required variables
+        run: |
+          for v in MASTODON_TOKEN MASTODON_INSTANCE; do
+            eval "val=\$$v"
+            [ -n "$val" ] || { echo "announce: required variable $v is unset"; exit 1; }
+          done
+
+      - name: Announce
+        env:
+          # Resolved from the module directory, so pin it to the checkout.
+          SITE_ROOT: ${{ github.workspace }}
+        run: |
+          ANNOUNCE_DIR="${ANNOUNCE_DIR:-$(dirname "$(grep -rl --include=go.mod 'iglou-eu/statiquepouet-hugo' "$SITE_ROOT" | head -n1)")}"
+          [ -f "$ANNOUNCE_DIR/go.mod" ] || { echo "announce: could not locate the announce module under $SITE_ROOT (set vars.ANNOUNCE_DIR to override)"; exit 1; }
+          echo "announce: using module at $ANNOUNCE_DIR"
+          cd "$ANNOUNCE_DIR"
+          go mod tidy
+          go run .
+
+      - name: Commit and push front-matter changes
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.email "actions@github.com"
+          git config user.name "StatiquePouet announce bot"
+          if git diff --quiet -- content; then
+            echo "announce: no front-matter changes to commit"
+          else
+            git add content
+            git commit -m "chore: announce articles to Mastodon"
+            git push
+          fi
