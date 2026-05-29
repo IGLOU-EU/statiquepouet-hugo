@@ -168,3 +168,7 @@ include:
 ```bash
 cp themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.github-actions.yml .github/workflows/announce.yml
 ```
+
+## License
+
+Public domain via the [Unlicense](UNLICENSE).
