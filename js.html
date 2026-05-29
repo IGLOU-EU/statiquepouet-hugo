@@ -1,4 +1,4 @@
-{{- if .Params.fediverse_context -}}
+{{- if .Params.fediverseContext -}}
 {{- $cfg := site.Params.statiquepouet | default dict -}}
 {{- $basePath := $cfg.basePath | default "https://statiquepouet.gitlab.iglou.eu/" -}}
 {{- if not (strings.HasSuffix $basePath "/") -}}{{- $basePath = printf "%s/" $basePath -}}{{- end -}}

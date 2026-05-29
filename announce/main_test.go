@@ -18,51 +18,51 @@ func TestWriteBackFediverseContext(t *testing.T) {
 			name: "yaml empty quoted value",
 			input: `---
 title: "Hello"
-fediverse_context: ""
+fediverseContext: ""
 tags:
   - foo
 ---
 body`,
 			url:      "https://m.example/@u/123",
-			wantLine: `fediverse_context: "https://m.example/@u/123"`,
+			wantLine: `fediverseContext: "https://m.example/@u/123"`,
 		},
 		{
 			name: "yaml empty bare value",
 			input: `---
 title: "Hello"
-fediverse_context:
+fediverseContext:
 ---
 body`,
 			url:      "https://m.example/@u/123",
-			wantLine: `fediverse_context: "https://m.example/@u/123"`,
+			wantLine: `fediverseContext: "https://m.example/@u/123"`,
 		},
 		{
 			name: "toml empty value",
 			input: `+++
 title = "Hello"
-fediverse_context = ""
+fediverseContext = ""
 +++
 body`,
 			url:      "https://m.example/@u/456",
-			wantLine: `fediverse_context = "https://m.example/@u/456"`,
+			wantLine: `fediverseContext = "https://m.example/@u/456"`,
 		},
 		{
 			name: "url with backslash and quote gets escaped",
 			input: `---
-fediverse_context: ""
+fediverseContext: ""
 ---
 `,
 			url:      `https://m.example/weird"path\here`,
-			wantLine: `fediverse_context: "https://m.example/weird\"path\\here"`,
+			wantLine: `fediverseContext: "https://m.example/weird\"path\\here"`,
 		},
 		{
 			name: "url containing $1 is not interpreted as backref",
 			input: `---
-fediverse_context: ""
+fediverseContext: ""
 ---
 `,
 			url:      `https://m.example/$1/$2`,
-			wantLine: `fediverse_context: "https://m.example/$1/$2"`,
+			wantLine: `fediverseContext: "https://m.example/$1/$2"`,
 		},
 	}
 
@@ -84,7 +84,7 @@ fediverse_context: ""
 			}
 			// Front-matter structure must be otherwise unchanged: other lines preserved.
 			for _, line := range strings.Split(tc.input, "\n") {
-				if strings.HasPrefix(strings.TrimSpace(line), "fediverse_context") {
+				if strings.HasPrefix(strings.TrimSpace(line), "fediverseContext") {
 					continue
 				}
 				if line == "" {
@@ -119,28 +119,28 @@ func TestScanCandidates(t *testing.T) {
 	files := map[string]string{
 		"candidate-yaml.md": `---
 title: "Yes"
-fediverse_context: ""
+fediverseContext: ""
 ---
 body`,
 		"candidate-toml.md": `+++
 title = "Yes"
-fediverse_context = ""
+fediverseContext = ""
 +++
 body`,
 		"candidate-whitespace-only.md": `---
-fediverse_context: "   "
+fediverseContext: "   "
 ---`,
 		"blog/candidate-nested.md": `---
-fediverse_context: ""
+fediverseContext: ""
 ---`,
 		"already-announced.md": `---
-fediverse_context: "https://m.example/@u/1"
+fediverseContext: "https://m.example/@u/1"
 ---`,
 		"no-key.md": `---
 title: "Skip me"
 ---`,
 		"not-markdown.txt": `---
-fediverse_context: ""
+fediverseContext: ""
 ---`,
 		"missing-front-matter.md": `# just markdown, no front matter`,
 	}
@@ -184,10 +184,10 @@ func TestScanCandidates_MultipleRoots(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := os.WriteFile(filepath.Join(root1, "a.md"), []byte("---\nfediverse_context: \"\"\n---\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root1, "a.md"), []byte("---\nfediverseContext: \"\"\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root2, "b.md"), []byte("---\nfediverse_context: \"\"\n---\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root2, "b.md"), []byte("---\nfediverseContext: \"\"\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

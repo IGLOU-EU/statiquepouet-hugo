@@ -1,6 +1,6 @@
 # StatiquePouet Mastodon auto-announce, as a reusable GitLab CI job.
 #
-# Toots articles whose `fediverse_context` is empty, writes the resulting
+# Toots articles whose `fediverseContext` is empty, writes the resulting
 # URL back into their front matter, then commits and pushes that change
 # so StatiquePouet can render the thread on the next build.
 #

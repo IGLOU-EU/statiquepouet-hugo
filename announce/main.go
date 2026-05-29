@@ -1,5 +1,5 @@
 // Announce Hugo articles on Mastodon, then write the resulting toot URL
-// back into each article's `fediverse_context` front matter so that
+// back into each article's `fediverseContext` front matter so that
 // StatiquePouet can render the comment thread for that article.
 //
 //	MASTODON_TOKEN     OAuth2 access token with `write:statuses` scope.
@@ -60,8 +60,8 @@ import (
 )
 
 const (
-	fediverseKey      = "fediverse_context"
-	hashtagsKey       = "fediverse_hashtags"
+	fediverseKey      = "fediverseContext"
+	hashtagsKey       = "fediverseHashtags"
 	paramsSection     = "statiquepouet" // [params.statiquepouet] in the Hugo config
 	defaultStatusBody = "New article: %title%\n%url%"
 	defaultVisibility = "public"
@@ -394,11 +394,11 @@ func mergeHashtags(defaults, page []string) []string {
 	return out
 }
 
-var fediverseLineRe = regexp.MustCompile(`(?m)^(fediverse_context[ \t]*[:=]).*$`)
+var fediverseLineRe = regexp.MustCompile(`(?m)^(fediverseContext[ \t]*[:=]).*$`)
 
 func writeBackFediverseContext(path string, original []byte, url string) error {
 	if !fediverseLineRe.Match(original) {
-		return errors.New("fediverse_context line not found in file")
+		return errors.New("fediverseContext line not found in file")
 	}
 	// JSON like escape for value inside double quotes. YAML and
 	// TOML accept this for characters we care about `\` or `"`.

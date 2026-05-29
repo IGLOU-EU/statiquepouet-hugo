@@ -45,12 +45,12 @@ In `layouts/_default/single.html` (or your equivalent), where the comments shoul
 {{ end }}
 ```
 
-Mark articles that should display a thread with a `fediverse_context` key in their front matter:
+Mark articles that should display a thread with a `fediverseContext` key in their front matter:
 
 ```yaml
 ---
 title: My article
-fediverse_context: "https://mastodon.social/@you/123456..."
+fediverseContext: "https://mastodon.social/@you/123456..."
 ---
 ```
 
@@ -96,22 +96,22 @@ cp -r path/to/statiquepouet/lang static/lang
 
 ## Mastodon auto-announce
 
-The repo ships [`announce/`](announce/), a small Go program that toots articles whose `fediverse_context` is empty and writes the resulting URL back into their front matter. It links Hugo as a Go library (`hugolib.NewHugoSites` + a no-render build) to enumerate pages and resolve permalinks, so per-page `slug:` / `url:` overrides and the site's `permalinks` config are honoured. Idempotent (skips already-announced articles, sends `Idempotency-Key` on the POST), skips gracefully when the token is unset (forks without secrets don't break).
+The repo ships [`announce/`](announce/), a small Go program that toots articles whose `fediverseContext` is empty and writes the resulting URL back into their front matter. It links Hugo as a Go library (`hugolib.NewHugoSites` + a no-render build) to enumerate pages and resolve permalinks, so per-page `slug:` / `url:` overrides and the site's `permalinks` config are honoured. Idempotent (skips already-announced articles, sends `Idempotency-Key` on the POST), skips gracefully when the token is unset (forks without secrets don't break).
 
-Optional per-article front-matter key `fediverse_hashtags` (list of strings, without the leading `#`) appends Mastodon hashtags at the end of the toot:
+Optional per-article front-matter key `fediverseHashtags` (list of strings, without the leading `#`) appends Mastodon hashtags at the end of the toot:
 
 ```yaml
-fediverse_context: ""
-fediverse_hashtags:
+fediverseContext: ""
+fediverseHashtags:
   - blog
   - lowtech
 ```
 
-Site-wide defaults go under `[params.statiquepouet]` as a `fediverse_hashtags` list. They are prepended to every toot, in addition to each article's own tags. Case-insensitive duplicates are dropped, the defaults keeping their leading position:
+Site-wide defaults go under `[params.statiquepouet]` as a `fediverseHashtags` list. They are prepended to every toot, in addition to each article's own tags. Case-insensitive duplicates are dropped, the defaults keeping their leading position:
 
 ```toml
 [params.statiquepouet]
-  fediverse_hashtags = ["blog", "france"]
+  fediverseHashtags = ["blog", "france"]
 ```
 
 Setup:
