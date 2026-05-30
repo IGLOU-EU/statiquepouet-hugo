@@ -145,6 +145,8 @@ func newHugoSites(siteRoot string) (*hugolib.HugoSites, error) {
 	cfg.Set("buildDrafts", true)
 	cfg.Set("buildFuture", true)
 	cfg.Set("buildExpired", true)
+	// git info fails under CI and we only need titles, permalinks and params
+	cfg.Set("enableGitInfo", false)
 
 	configs, err := allconfig.LoadConfig(allconfig.ConfigSourceDescriptor{
 		Flags:       cfg,
