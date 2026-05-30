@@ -7,12 +7,12 @@
 # Include it from your site's .gitlab-ci.yml (no editing needed):
 #
 #   include:
-#     - local: 'themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
+#     - local: 'themes/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
 #
 # Run the statiquepouet-announce job before your `hugo build` job. The
-# job locates this module itself by scanning for its go.mod, so it works
-# whether the theme was `git clone`d or added as a submodule. (For the
-# submodule case, GIT_SUBMODULE_STRATEGY below pulls its files in.)
+# announce module lives at themes/statiquepouet-hugo/announce; set
+# ANNOUNCE_DIR if you cloned the theme under a different directory name.
+# (For the submodule case, GIT_SUBMODULE_STRATEGY below pulls its files in.)
 #
 # Required CI/CD variables (Settings > CI/CD > Variables). The job fails
 # fast if either is unset:
@@ -23,7 +23,8 @@
 #   STATUS_VISIBILITY  public | unlisted | private | direct. Default public.
 #   STATUS_TEMPLATE    Toot body, tokens %title% and %url%. Default
 #                      "New article: %title%\n%url%".
-#   ANNOUNCE_DIR       Skip auto-detection and use this module path directly.
+#   ANNOUNCE_DIR       Path to the announce module, relative to the site
+#                      root. Default themes/statiquepouet-hugo/announce.
 #   SITE_ROOT          Hugo site root. Defaults to the repo root; set it
 #                      only for a monorepo where the site lives in a subfolder.
 #
@@ -46,10 +47,10 @@ statiquepouet-announce:
         [ -n "$val" ] || { echo "announce: required variable $v is unset"; exit 1; }
       done
     - |
-      ANNOUNCE_DIR="${ANNOUNCE_DIR:-$(dirname "$(grep -rl --include=go.mod 'iglou-eu/statiquepouet-hugo' "$SITE_ROOT" | head -n1)")}"
-      [ -f "$ANNOUNCE_DIR/go.mod" ] || { echo "announce: could not locate the announce module under $SITE_ROOT (set ANNOUNCE_DIR to override)"; exit 1; }
-      echo "announce: using module at $ANNOUNCE_DIR"
-      cd "$ANNOUNCE_DIR"
+      MODULE_DIR="$SITE_ROOT/${ANNOUNCE_DIR:-themes/statiquepouet-hugo/announce}"
+      [ -f "$MODULE_DIR/go.mod" ] || { echo "announce: $MODULE_DIR not found (set ANNOUNCE_DIR if the theme dir is named differently)"; exit 1; }
+      echo "announce: using module at $MODULE_DIR"
+      cd "$MODULE_DIR"
       go mod tidy
       go run .
     # Commit and push the front-matter changes the program wrote back.

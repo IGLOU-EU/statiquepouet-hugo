@@ -1,51 +1,49 @@
 # StatiquePouet — Hugo integration
 
-Hugo bindings for [StatiquePouet](https://gitlab.com/iglou.eu/statiquepouet). The underlying library, its options, theming and runtime behaviour live in the main repo, this one is just the glue.
+Render a fediverse comment thread under your articles. Hugo bindings for [StatiquePouet](https://gitlab.com/iglou.eu/statiquepouet).
 
-> Intentionally not packaged as a Hugo module: four partial files don't justify pulling in a Go toolchain, adding a `go.mod` to your site, or migrating a classic `theme:` setup into the modules system. A `git clone` does the same job with zero friction.
+## Quick start
 
-## Quickstart
-
-From your Hugo site root:
+**1. Add the theme as a git submodule.** From your site root:
 
 ```bash
-git clone --depth 1 https://gitlab.com/iglou.eu/statiquepouet-hugo.git themes/<name>/layouts/_partials/statiquepouet-hugo
+git submodule add https://gitlab.com/iglou.eu/statiquepouet-hugo.git themes/statiquepouet-hugo
 ```
 
-Or, if your theme is itself a git repo, add it as a submodule so upgrades stay tracked:
+**2. Enable it.** In your Hugo config, list your own theme first and StatiquePouet second:
 
-```bash
-git submodule add https://gitlab.com/iglou.eu/statiquepouet-hugo.git themes/<name>/layouts/_partials/statiquepouet-hugo
+```toml
+theme = ["your-theme", "statiquepouet-hugo"]
 ```
 
-Wire the four partials. In `layouts/_default/baseof.html`:
+**3. Wire the partials.** In `layouts/_default/baseof.html`:
 
 ```go-html-template
 <!doctype html>
 <html lang="{{ .Site.Language.Lang }}">
 <head>
   …
-  {{ partial       "statiquepouet-hugo/fediverse-context.html" . }}
-  {{ partialCached "statiquepouet-hugo/css.html" . }}
+  {{ partial       "statiquepouet-fediverse-context.html" . }}
+  {{ partialCached "statiquepouet-css.html" . }}
 </head>
 <body>
   {{ block "main" . }}{{ end }}
   …
-  {{ partialCached "statiquepouet-hugo/js.html" . }}
+  {{ partialCached "statiquepouet-js.html" . }}
 </body>
 </html>
 ```
 
-In `layouts/_default/single.html` (or your equivalent), where the comments should appear:
+In `layouts/_default/single.html`, where the comments should appear:
 
 ```go-html-template
 {{ define "main" }}
   <article>…</article>
-  {{ partialCached "statiquepouet-hugo/content.html" . }}
+  {{ partialCached "statiquepouet-content.html" . }}
 {{ end }}
 ```
 
-Mark articles that should display a thread with a `fediverseContext` key in their front matter:
+**4. Point an article at a fediverse post.** Add a `fediverseContext` key to its front matter:
 
 ```yaml
 ---
@@ -54,9 +52,32 @@ fediverseContext: "https://mastodon.social/@you/123456..."
 ---
 ```
 
-Without it, all four partials render nothing (safe to call them unconditionally on every page).
+That's it. The article now shows the thread of replies to that fediverse post. Articles without the key render nothing, so the partials are safe to call on every page.
 
-That's it. Out of the box the JS, CSS and i18n bundles are served from the upstream GitLab Pages CDN, no other setup needed.
+## Installation methods
+
+The submodule in the quick start is the recommended default. Three methods work, all install the same self-contained theme:
+
+| Method | Command | Notes |
+|---|---|---|
+| **git submodule** | `git submodule add <repo> themes/statiquepouet-hugo` | Tracks upgrades in your repo. Recommended. |
+| **git clone** | `git clone --depth 1 <repo> themes/statiquepouet-hugo` | Simplest, no submodule bookkeeping. |
+| **Hugo Module** | `hugo mod get gitlab.com/iglou.eu/statiquepouet-hugo` | For sites already using the modules system. |
+
+`<repo>` is `https://gitlab.com/iglou.eu/statiquepouet-hugo.git`.
+
+For the clone and submodule methods, enable the theme via composition as shown in the quick start. No theme of your own? `theme = "statiquepouet-hugo"` works too. Neither method needs a Go toolchain on your site (only the optional announce tool does).
+
+For the Hugo Module method, your site must itself be a module (`hugo mod init <path>` once), then import it:
+
+```toml
+[[module.imports]]
+  path = "gitlab.com/iglou.eu/statiquepouet-hugo"
+```
+
+Heads-up for module users: the optional [`announce/`](announce/) tool is a separate nested Go module, so `hugo mod get` does **not** fetch it. If you want it, use the clone or submodule method instead.
+
+Whichever method you choose, Hugo merges the layouts so StatiquePouet's partials become available. They are all prefixed `statiquepouet-`, so they override nothing of yours. Out of the box the JS, CSS and i18n bundles are served from the upstream GitLab Pages CDN, no other setup needed.
 
 ## Configuration
 
@@ -87,7 +108,7 @@ TOML example:
 
 ## Self-hosting the assets
 
-The default `basePath` points at the upstream Pages CDN. Convenient but tied to upstream `main`. To host the assets yourself, copy `dist/` and `lang/` from the main repo into your `static/`, then set `basePath` config:
+The default `basePath` points at the upstream Pages CDN. Convenient but tied to upstream `main`. To host the assets yourself, copy `dist/` and `lang/` from the main repo into your `static/`, then set the `basePath` config:
 
 ```bash
 cp -r path/to/statiquepouet/dist static/dist
@@ -125,7 +146,7 @@ Requires `go` in `PATH` (Hugo is embedded as a library). From the site root:
 # .git/hooks/pre-push
 #!/bin/sh
 set -e
-go run ./themes/<name>/layouts/_partials/statiquepouet-hugo/announce
+go run ./themes/statiquepouet-hugo/announce
 if ! git diff --quiet content/; then
   git add content/
   git commit -m "chore: announce articles to Mastodon"
@@ -136,7 +157,7 @@ You can also build the binary once (`go build -o announce ./announce` from the t
 
 ### CI (GitLab / GitHub)
 
-The `announce/` folder ships ready CI files, [`announce.gitlab-ci.yml`](announce/announce.gitlab-ci.yml) and [`announce.github-actions.yml`](announce/announce.github-actions.yml), with the same flow: run the program on `golang:latest`, refresh its dependencies with `go mod tidy`, then commit and push the front-matter URLs back to your repo. No editing of the file is needed everything is set through CI variables. Run it before your Hugo build.
+The `announce/` folder ships ready CI files, [`announce.gitlab-ci.yml`](announce/announce.gitlab-ci.yml) and [`announce.github-actions.yml`](announce/announce.github-actions.yml), with the same flow: run the program on `golang:latest`, refresh its dependencies with `go mod tidy`, then commit and push the front-matter URLs back to your repo. No editing of the file is needed, everything is set through CI variables. Run it before your Hugo build.
 
 Configure these (GitLab: Settings, CI/CD, Variables. GitHub: Settings, Secrets and variables, Actions). The job fails fast if either is unset:
 
@@ -151,7 +172,7 @@ Optional:
 |---|---|
 | `STATUS_VISIBILITY` | `public` / `unlisted` / `private` / `direct`. Default `public`. |
 | `STATUS_TEMPLATE` | Toot body, tokens `%title%` and `%url%`. Default `New article: %title%\n%url%`. |
-| `ANNOUNCE_DIR` | Skip the scan and point at the module directly. |
+| `ANNOUNCE_DIR` | Path to the announce module, relative to the site root. Default `themes/statiquepouet-hugo/announce`. Set it only if you cloned the theme under a different directory name. |
 | `SITE_ROOT` | Hugo site root. Set it only for a monorepo where the site lives in a subfolder (defaults to the repo root). |
 
 The push back uses the platform's built-in token, no extra credential to create, and such pushes do not retrigger the pipeline.
@@ -160,13 +181,13 @@ The push back uses the platform's built-in token, no extra credential to create,
 
 ```yaml
 include:
-  - local: 'themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
+  - local: 'themes/statiquepouet-hugo/announce/announce.gitlab-ci.yml'
 ```
 
 **GitHub.** If you have no workflow yet, copy the file as a standalone workflow. Workflows only run from `.github/workflows/` at the repo root, so copy it there.
 
 ```bash
-cp themes/<name>/layouts/_partials/statiquepouet-hugo/announce/announce.github-actions.yml .github/workflows/announce.yml
+cp themes/statiquepouet-hugo/announce/announce.github-actions.yml .github/workflows/announce.yml
 ```
 
 If you already have a build/deploy workflow, do not add a second workflow. Copy only the `announce` job (the `jobs.announce:` block, from `announce:` down to the end of the file) into your existing workflow's `jobs:` and wire it as a gate before your build:

@@ -1,0 +1,14 @@
+name = "StatiquePouet"
+license = "Unlicense"
+licenselink = "https://gitlab.com/iglou.eu/statiquepouet-hugo/-/blob/main/UNLICENSE"
+description = "Hugo theme bindings for StatiquePouet: render a fediverse comment thread under your articles."
+homepage = "https://gitlab.com/iglou.eu/statiquepouet-hugo"
+demosite = "https://blog.iglou.eu"
+min_version = "0.146.0"
+
+tags = ["comments", "mastodon", "fediverse", "activitypub"]
+features = ["comments"]
+
+[author]
+  name = "Adrien Kara"
+  homepage = "https://iglou.eu"
