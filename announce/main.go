@@ -247,7 +247,7 @@ func normaliseInstance(s string) string {
 
 func announcePage(client *http.Client, token, instance, visibility, tmpl, siteRoot string, defaultTags []string, p page.Page) (string, error) {
 	params := p.Params()
-	rawCtx, hasKey := params[fediverseKey]
+	rawCtx, hasKey := params[strings.ToLower(fediverseKey)]
 	if !hasKey {
 		return "", nil
 	}
@@ -265,7 +265,8 @@ func announcePage(client *http.Client, token, instance, visibility, tmpl, siteRo
 	body := strings.ReplaceAll(tmpl, "%title%", title)
 	body = strings.ReplaceAll(body, "%url%", p.Permalink())
 
-	if tags := mergeHashtags(defaultTags, extractHashtags(params[hashtagsKey])); len(tags) > 0 {
+	if tags := mergeHashtags(defaultTags,
+		extractHashtags(params[strings.ToLower(hashtagsKey)])); len(tags) > 0 {
 		body = strings.TrimRight(body, "\n") + "\n\n" + strings.Join(tags, " ")
 	}
 
@@ -385,7 +386,7 @@ func extractHashtags(v any) []string {
 func mergeHashtags(defaults, page []string) []string {
 	out := make([]string, 0, len(defaults)+len(page))
 	seen := make(map[string]bool, len(defaults)+len(page))
-	for _, tag := range append(append([]string{}, defaults...), page...) {
+	for _, tag := range append(defaults, page...) {
 		key := strings.ToLower(tag)
 		if seen[key] {
 			continue
