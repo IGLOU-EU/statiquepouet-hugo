@@ -138,22 +138,41 @@ Site-wide defaults go under `[params.statiquepouet]` as a `fediverseHashtags` li
 Setup:
 1. Mastodon UI, Preferences, Development, New application, scope `write:statuses` only. Copy the token.
 2. Export `MASTODON_TOKEN`, `MASTODON_INSTANCE`. Optional: `STATUS_VISIBILITY` (default `public`), `STATUS_TEMPLATE` (default `New article: %title%\n%url%`), `SITE_ROOT` (default `.`). See the file header for details.
-3. Wire it before `hugo build`. npm `prebuild`, Makefile, or a git `pre-push` hook.
+3. Wire it before `hugo build`. npm `prebuild`, Makefile, or the git `pre-commit` hook below.
 
-Requires `go` in `PATH` (Hugo is embedded as a library). From the site root:
+Requires `go` in `PATH` (Hugo is embedded as a library).
+
+### Local: git pre-commit hook
+
+The `announce/` folder ships a ready [`announce.pre-commit.sh`](announce/announce.pre-commit.sh) hook. When you commit an article whose `fediverseContext` is empty, it toots it and stages the resulting URL into that same commit, so the next build renders the thread. It is configured entirely through `git config` under the `statiquepouet.*` namespace, no env file to manage.
+
+Install it from your site root, once:
 
 ```bash
-# .git/hooks/pre-push
-#!/bin/sh
-set -e
-go run ./themes/statiquepouet-hugo/announce
-if ! git diff --quiet content/; then
-  git add content/
-  git commit -m "chore: announce articles to Mastodon"
-fi
+cp themes/statiquepouet-hugo/announce/announce.pre-commit.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
 ```
 
-You can also build the binary once (`go build -o announce ./announce` from the theme repo) and ship it in `PATH` to skip the `go run` cost on every invocation.
+Then configure it. The token stays in `.git/config` (via `--local`), so it is never committed and never lands in your global `~/.gitconfig`:
+
+```bash
+git config --local statiquepouet.token <write:statuses token>   # required, secret
+git config statiquepouet.instance mastodon.example              # required, bare hostname
+git config statiquepouet.visibility unlisted                    # optional
+```
+
+| Key | Required | Effect |
+|---|---|---|
+| `statiquepouet.token` | yes | OAuth2 token, scope `write:statuses`. Set it with `--local` so it stays out of git and out of `~/.gitconfig`. |
+| `statiquepouet.instance` | yes | Bare instance hostname, e.g. `mastodon.example`. |
+| `statiquepouet.enabled` | no | `0` to turn the hook off without uninstalling it. Default on. |
+| `statiquepouet.binary` | no | Path to a prebuilt announce binary. Set it to skip the `go` build on every commit (`go build -o announce ./announce` from the theme repo). |
+| `statiquepouet.visibility` | no | `public` / `unlisted` / `private` / `direct`. Default `public`. |
+| `statiquepouet.template` | no | Toot body, tokens `%title%` and `%url%`. Default `New article: %title%\n%url%`. |
+| `statiquepouet.dir` | no | Path to the announce module, relative to the site root. Default `themes/statiquepouet-hugo/announce`. |
+| `statiquepouet.siteRoot` | no | Hugo site root. Defaults to the git repo root. Set it only for a monorepo. |
+
+The hook never blocks your commit: if it is disabled, has no staged article awaiting a toot, or is not configured, it exits quietly. To avoid paying for a Hugo build on every commit, it first checks whether a staged markdown file under `content/` actually carries an empty `fediverseContext`, and only then runs the program. Because it stages the URLs into the commit in progress, the thread renders on your very next build, unlike a pre-push hook.
 
 ### CI (GitLab / GitHub)
 
