@@ -32,8 +32,18 @@ FALSE=0
 HOOKS_ENABLED="$(git config --int --get statiquepouet.enabled 2>/dev/null || echo "$TRUE")"
 [ "$HOOKS_ENABLED" -eq "$FALSE" ] && exit 0
 
+# The front-matter key that marks an announceable article. Overridable for
+# forks that renamed it; it must match the key your theme partials and the
+# announce program use (both default to fediverseContext).
+context_key="$(git config --get statiquepouet.contextKey 2>/dev/null || true)"
+[ -n "$context_key" ] || context_key="fediverseContext"
+empty_ctx="^${context_key}[[:space:]]*[:=][[:space:]]*(\"\"|'')?[[:space:]]*\$"
+
 # Cheap guard: only pay for the Hugo build when a staged markdown file under
-# content/ carries an empty fediverseContext, i.e. an article awaiting its toot.
+# content/ carries an empty fediverseContext, i.e. an article awaiting its
+# toot. The whole staged file is inspected, not just the lines this commit
+# changed, so an article still awaiting its toot triggers even when the commit
+# touched only its body.
 new_content="$FALSE"
 oldifs=$IFS
 IFS='
@@ -43,7 +53,7 @@ for f in $(git diff --cached --name-only --diff-filter=d -- content 2>/dev/null)
     *.md) ;;
     *) continue ;;
   esac
-  if git show ":$f" 2>/dev/null | grep -Eq "^fediverseContext[[:space:]]*[:=][[:space:]]*(\"\"|'')?[[:space:]]*\$"; then
+  if git show ":$f" 2>/dev/null | grep -Eq "$empty_ctx"; then
     new_content="$TRUE"
     break
   fi
